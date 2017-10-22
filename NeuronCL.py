@@ -8,7 +8,7 @@ import pyopencl as cl
 # vectorSize = 16
 # matrixSize = vectorSize*vectorSize;
 
-def buildNeuron(self, context):
+def buildNeuron(context):
     program = cl.Program(context, """
     __kernel void sumMatrix(__global const float *add_g, __global const float *bdd_g, __global float *des_g)
     {
@@ -56,12 +56,12 @@ class Neuron(object):
     def __init__(self, numInputArr, vecSize):
         self.vectorSize = vecSize
         self.mSize = vecSize*vecSize
-        self.vectorWeight = np.random.rand(vecSize).astype(np.float32)
-        self.bias = np.random.rand(numInputArr).astype(np.float32)
+        self.vectorWeight = 2*np.random.rand(vecSize).astype(np.float32) - 1
+        self.bias = 2*np.random.rand(numInputArr).astype(np.float32) - 1
         pass
 
     # returns normalized Matrix out
-    def runNeuron(self, queue, program, matrixArr):
+    def runNeuron(self, ctx, queue, program, matrixArr):
         inputs = len(matrixArr)
         weightAve = np.float32(0.0)
 
