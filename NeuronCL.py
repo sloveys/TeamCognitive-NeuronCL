@@ -51,29 +51,32 @@ class Neuron(object):
     vectorSize = 0
     mSize = 0
     vectorWeight = np.array([])
+    vectorWeight2 = np.array([])
     bias = np.array([])
 
     def __init__(self, numInputArr, vecSize):
         self.vectorSize = vecSize
         self.mSize = vecSize*vecSize
-        self.vectorWeight = 2*np.random.rand(vecSize).astype(np.float32) - 1
-        self.bias = 2*np.random.rand(numInputArr).astype(np.float32) - 1
+        self.vectorWeight = 2.0*np.random.rand(vecSize).astype(np.float32) - 1.0
+        self.vectorWeight2 = 2.0*np.random.rand(vecSize).astype(np.float32) - 1.0
+        self.bias = 2.0*np.random.rand(numInputArr).astype(np.float32) - 1.0
         pass
 
     # returns normalized Matrix out
     def runNeuron(self, ctx, queue, program, matrixArr):
         inputs = len(matrixArr)
-        weightAve = np.float32(0.0)
+        weightAve = np.float32(0.0001)
 
         mf = cl.mem_flags
         vecW_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=self.vectorWeight)
+        vecW2_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=self.vectorWeight2)
         aVec_g = cl.Buffer(ctx, mf.WRITE_ONLY, 32*self.vectorSize)
         bVec_g = cl.Buffer(ctx, mf.WRITE_ONLY, 32*self.vectorSize)
         for i in range(inputs):
             matrix_g = cl.Buffer(ctx, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=matrixArr[i])
             program.scalarWeight(queue, (self.mSize,), None, np.float32(self.bias[i]), matrix_g, matrix_g)
             program.dotPrime(queue, (self.mSize,), None, np.int32(self.vectorSize), vecW_g, matrix_g, aVec_g)
-            program.dotSecondary(queue, (self.mSize,), None, np.int32(self.vectorSize), vecW_g, matrix_g, bVec_g)
+            program.dotSecondary(queue, (self.mSize,), None, np.int32(self.vectorSize), vecW2_g, matrix_g, bVec_g)
             program.fullMultiply(queue, (self.mSize,), None, np.int32(self.vectorSize), aVec_g, bVec_g, matrix_g)
             weightAve += np.float32(self.bias[i])
             if (i == 0):
@@ -82,7 +85,7 @@ class Neuron(object):
                 program.sumMatrix(queue, (self.mSize,), None, mOut_g, matrix_g, mOut_g)
 
         weightAve = weightAve/np.float32(inputs)
-        program.scalarWeight(queue, (self.mSize,), None, np.float32(1/(inputs*weightAve*self.vectorSize)), mOut_g, mOut_g)
+        program.scalarWeight(queue, (self.mSize,), None, np.float32(1.0/(inputs*weightAve*self.vectorSize+0.0000001)), mOut_g, mOut_g)
         mOut_np = np.empty_like(matrixArr[0])
         cl.enqueue_copy(queue, mOut_np, mOut_g)
         return mOut_np
