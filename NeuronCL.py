@@ -6,8 +6,8 @@ os.environ['PYOPENCL_COMPILER_OUTPUT'] = '1'
 os.environ['PYOPENCL_CTX'] = '0:0' # for our GPU change '0:0' to '1'
 # should build dynamic system later for choosing GPGPUs
 
-vectorSize = 16
-matrixSize = vectorSize*vectorSize;
+# vectorSize = 16
+# matrixSize = vectorSize*vectorSize;
 
 #Returns Program
 def buildNeuron(context):
@@ -75,24 +75,23 @@ def runNeuron(queue, program, vectorSize, matrixArr, bias, vectorWeight):
     mOut_np = np.empty_like(matrixArr[0])
     cl.enqueue_copy(queue, mOut_np, mOut_g)
     return mOut_np
-
-np.random.seed(41)
-add_np = np.random.rand(matrixSize).astype(np.float32)
-bdd_np = np.random.rand(matrixSize).astype(np.float32)
-vec_np = np.random.rand(vectorSize).astype(np.float32)
-bias2 = np.array([1.0, 0.9, 0.8])
-mtrxArr = np.array([add_np, bdd_np])
-
-ctx = cl.create_some_context()
-queue = cl.CommandQueue(ctx)
-
-prg = buildNeuron(ctx)
-
-#queue, program, vectorSize, matrixArr, bias, vectorWeight
-matrixOut = runNeuron(queue, prg, vectorSize, mtrxArr, bias2, vec_np)
-mtrxArr = np.array([add_np, bdd_np, matrixOut])
-matrixOut2 = runNeuron(queue, prg, vectorSize, mtrxArr, bias2, vec_np)
-
-
-print(matrixOut)
-print(matrixOut2)
+#
+# np.random.seed(41)
+# add_np = np.random.rand(matrixSize).astype(np.float32)
+# bdd_np = np.random.rand(matrixSize).astype(np.float32)
+# vec_np = np.random.rand(vectorSize).astype(np.float32)
+# bias2 = np.array([1.0, 0.9, 0.8])
+# mtrxArr = np.array([add_np, bdd_np])
+#
+# ctx = cl.create_some_context()
+# queue = cl.CommandQueue(ctx)
+#
+# prg = buildNeuron(ctx)
+#
+# matrixOut = runNeuron(queue, prg, vectorSize, mtrxArr, bias2, vec_np)
+# mtrxArr = np.array([add_np, bdd_np, matrixOut])
+# matrixOut2 = runNeuron(queue, prg, vectorSize, mtrxArr, bias2, vec_np)
+#
+#
+# print(matrixOut)
+# print(matrixOut2)
