@@ -1,0 +1,14 @@
+Problem:
+	Google's Tensorflow API has gpu support for only Nvidea GPUs, this leaves anybody
+	with other gpus rendered to a huge disadvantage in implementations of NN. It
+	gives Nvidia a monopoly on common nueral network accelleration.
+
+Our proposal:
+	We propose the creation of an api that can be used with any openCL
+	enabled device. This API should be simple to use but have a high level of
+	customization.
+
+Research:
+	As it is now, Google offers no official support of openCL for TensorFlow.
+	Upon further research it becomes apparant that none of the big NN APIs support
+	openCL.
