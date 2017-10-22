@@ -1,38 +1,51 @@
 #TEAM COGNITIVE openCL Library!
+from __future__ import absolute_import, print_function
+import pyopencl as cl
+import numpy as np
+import NeuronCL as ncl
 class NueralNetwork:
-    vWeight
-    sWeight
-    layerCount
-    layers
-
+    vWeight = None
+    sWeight = None
+    layerCount = None
+    vectorSize = None
+    context = None
+    queue = None
+    clProgram = None
+    numInputArrays = None
+    vectorSize = None
     def nonlin(x, deriv=False):
         if (deriv==True):
             return x*(1-x)
         return 1/(1+np.exp(-x))
 
 
-    def initNN():
-        layerCount = 0
-        vWeight = []
+    def initNN(numArr, vecSize):
+        numInputArrays = numArr
+        vectorSize = vecSize
         layers = []
-        sWeight = []
-        return(1)
+        context = cl.create_some_context()
+        queue = cl.CommandQueue(context)
+        clProgram = buildNeuron(context)
+        pass
 
-    def addLayer(layerSize):
-        if (layerCount == 0):
-            layers = [layerSize]
-        else:
-            layers.append(layerSize)
-        layerCount++
-        return()
+    def addLayer(numNeuron):
+        neuronList = []
+        for i in range(numNeuron):
+            neuronList.append(Neuron(numInputArrays, vectorSize))
+        layers.append(neuronList)
+        pass
+
     def train(trainInput, trainOutput, iterations):
 
-        return()
-    def run(runInput):
-        np.random.seed(2017)
-        layerOutput = np.copy(runInput)
-        for iter in layerCount:
-            layer
+        pass
 
-        return()
+    def run(runInput):
+        layerInput = np.copy(runInput)
+
+        for layerLevel in range(len(layers)):
+            layerOutput = np.array(len(layers[layerLevel]))
+            for neuron in range(len(layers[layerLevel])):
+                #queue program matrix
+                layerOutput = layers[layersLevel][neuron].runNeuron(queue, clProgram, runInput)
+            layerInput = layerOutput
     # def updateVariables():
