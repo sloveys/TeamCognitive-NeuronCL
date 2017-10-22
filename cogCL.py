@@ -3,7 +3,7 @@ from __future__ import absolute_import, print_function
 import pyopencl as cl
 import numpy as np
 import NeuronCL as ncl
-class NueralNetwork:
+class NueralNetwork(object):
     vWeight = None
     sWeight = None
     layerCount = None
@@ -19,7 +19,7 @@ class NueralNetwork:
         return 1/(1+np.exp(-x))
 
 
-    def initNN(numArr, vecSize):
+    def __init__(self, numArr, vecSize):
         numInputArrays = numArr
         vectorSize = vecSize
         layers = []

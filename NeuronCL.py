@@ -5,7 +5,6 @@ import pyopencl as cl
 # os.environ['PYOPENCL_COMPILER_OUTPUT'] = '1'
 # os.environ['PYOPENCL_CTX'] = '0:0' # for our GPU change '0:0' to '1'
 # should build dynamic system later for choosing GPGPUs
-
 # vectorSize = 16
 # matrixSize = vectorSize*vectorSize;
 
