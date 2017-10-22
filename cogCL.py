@@ -46,6 +46,6 @@ class NueralNetwork:
             layerOutput = np.array(len(layers[layerLevel]))
             for neuron in range(len(layers[layerLevel])):
                 #queue program matrix
-                layerOutput = layers[layersLevel][neuron].runNeuron(queue, clProgram, runInput)
+                layerOutput[neuron] = layers[layersLevel][neuron].runNeuron(queue, clProgram, runInput)
             layerInput = layerOutput
     # def updateVariables():
