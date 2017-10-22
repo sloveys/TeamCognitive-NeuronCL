@@ -8,6 +8,45 @@ import pyopencl as cl
 # vectorSize = 16
 # matrixSize = vectorSize*vectorSize;
 
+def buildNeuron(self, context):
+    program = cl.Program(context, """
+    __kernel void sumMatrix(__global const float *add_g, __global const float *bdd_g, __global float *des_g)
+    {
+      int grid = get_global_id(0);
+      des_g[grid] = add_g[grid] + bdd_g[grid];
+    }
+    __kernel void scalarWeight(float weight, __global const float *matrix, __global float *matrixDes)
+    {
+      int grid = get_global_id(0);
+      matrixDes[grid] = matrix[grid] * weight;
+    }
+    __kernel void dotPrime(int vecSize, __global float *vecWeight, __global const float *matrix, __global float *vecDes)
+    {
+      int grid = get_global_id(0);
+      vecDes[grid] = 0.0;
+      for (int i=0; i < vecSize; i++) {
+        vecDes[grid] += matrix[(vecSize*grid) + i] * vecWeight[i];
+      }
+    }
+    __kernel void dotSecondary(int vecSize, __global float *vecWeight, __global const float *matrix, __global float *vecDes)
+    {
+      int grid = get_global_id(0);
+      vecDes[grid] = 0.0;
+      for (int i=0; i < vecSize; i++) {
+        vecDes[grid] += matrix[(vecSize*i) + grid] * vecWeight[i];
+      }
+    }
+    __kernel void fullMultiply(int vecSize, __global const float *aVec, __global const float *bVec, __global float *matrix)
+    {
+      int grid = get_global_id(0);
+      int x = grid / vecSize;
+      int y = grid % vecSize;
+      matrix[grid] = aVec[x]*bVec[y];
+    }
+    """).build()
+    return program
+
+
 class Neuron(object):
     vectorSize = 0
     mSize = 0
@@ -20,44 +59,6 @@ class Neuron(object):
         self.vectorWeight = np.random.rand(vecSize).astype(np.float32)
         self.bias = np.random.rand(numInputArr).astype(np.float32)
         pass
-
-    def buildNeuron(self, context):
-        program = cl.Program(context, """
-        __kernel void sumMatrix(__global const float *add_g, __global const float *bdd_g, __global float *des_g)
-        {
-          int grid = get_global_id(0);
-          des_g[grid] = add_g[grid] + bdd_g[grid];
-        }
-        __kernel void scalarWeight(float weight, __global const float *matrix, __global float *matrixDes)
-        {
-          int grid = get_global_id(0);
-          matrixDes[grid] = matrix[grid] * weight;
-        }
-        __kernel void dotPrime(int vecSize, __global float *vecWeight, __global const float *matrix, __global float *vecDes)
-        {
-          int grid = get_global_id(0);
-          vecDes[grid] = 0.0;
-          for (int i=0; i < vecSize; i++) {
-            vecDes[grid] += matrix[(vecSize*grid) + i] * vecWeight[i];
-          }
-        }
-        __kernel void dotSecondary(int vecSize, __global float *vecWeight, __global const float *matrix, __global float *vecDes)
-        {
-          int grid = get_global_id(0);
-          vecDes[grid] = 0.0;
-          for (int i=0; i < vecSize; i++) {
-            vecDes[grid] += matrix[(vecSize*i) + grid] * vecWeight[i];
-          }
-        }
-        __kernel void fullMultiply(int vecSize, __global const float *aVec, __global const float *bVec, __global float *matrix)
-        {
-          int grid = get_global_id(0);
-          int x = grid / vecSize;
-          int y = grid % vecSize;
-          matrix[grid] = aVec[x]*bVec[y];
-        }
-        """).build()
-        return program
 
     # returns normalized Matrix out
     def runNeuron(self, queue, program, matrixArr):
