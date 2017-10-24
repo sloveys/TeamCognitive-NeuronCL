@@ -5,7 +5,7 @@ import numpy as np
 import NeuronCL as ncl
 import os
 os.environ['PYOPENCL_COMPILER_OUTPUT'] = '1'
-os.environ['PYOPENCL_CTX'] = '1'
+os.environ['PYOPENCL_CTX'] = '0:0'
 
 class NueralNetwork(object):
     vWeight = None
@@ -40,29 +40,7 @@ class NueralNetwork(object):
         self.layers.append(neuronList)
         pass
 
-    def train(self, trainInput, nOutput, iterations):
-        for i in range(iterations):
-            layerInput = np.copy(trainInput)
-            allLayerOutputs = [np.copy(trainInput)]
-            for layerLevel in range(len(self.layers)):
-                layerOutput = []
-                for neuron in range(len(self.layers[layerLevel])):
-                    layerOutput.append(self.layers[layerLevel][neuron].runNeuron(self.context, self.queue, self.clProgram, layerInput))
-                layerInput = np.array(layerOutput)
-                allLayerOutputs.append(np.array(layerOutput))
-            guess = getTruth(layerInput)
-            final_error = nOutput - guess
-            lastNueronChange = (final_error *nonlin(getTruth(layerInput), True)).astype(np.float32)
-            print(lastNueronChange)
-            self.layers[layerLevel][neuron].bias += np.dot(np.array(allLayerOutputs[len(self.layers) - 1]).T, lastNueronChange)
-            print(guess)
-            backp = len(self.layers)
-            # while (back > 0):
-                # if ()
-        pass
-
-
-    def train2(self, trainInput, nOutput, iterations, tester):
+    def train(self, trainInput, nOutput, iterations, tester):
         for i in range(iterations):
             for layerLevelInv in range(len(self.layers)):
                 layerLevel = len(self.layers) - 1 - layerLevelInv
@@ -70,34 +48,42 @@ class NueralNetwork(object):
                     for vecW in range(self.vectorSize):
                         matrix = self.run(trainInput)[0]
                         error = nOutput - matrix[0]
-                        currT = getTruth(matrix)
+                        currT = getConfidince(matrix)
                         print("Actual Output: ",nOutput,"\nAlgorithm guess: ",matrix[0],"\nConfidince: ",currT,"\nTest: ",tester)
                         if (error < 0.01 and error > 0.01 and currT > 0.95):
                             pass
-                        self.layers[layerLevel][neuron].vectorWeight[vecW] += error / currT
+                        if (currT != 0):
+                            self.layers[layerLevel][neuron].vectorWeight[vecW] = nonLinSum(self.layers[layerLevel][neuron].vectorWeight[vecW], error, currT)
+                        # if (self.layers[layerLevel][neuron].vectorWeight[vecW] > 16.0):
+                        #     self.layers[layerLevel][neuron].vectorWeight[vecW] = 16.0 #hault float overflow
 
 
                     for vecW2 in range(self.vectorSize):
                         matrix = self.run(trainInput)[0]
                         error = nOutput - matrix[0]
-                        currT = getTruth(matrix)
+                        currT = getConfidince(matrix)
                         #print("Actual Output: ",nOutput,"\nAlgorithm guess: ",matrix[0],"\nConfidince: ",currT,"\nTest: ",tester)
                         if (error < 0.01 and error > 0.01 and currT > 0.95):
                             pass
-                        self.layers[layerLevel][neuron].vectorWeight2[vecW2] += error / currT
+                        if (currT != 0.0):
+                            self.layers[layerLevel][neuron].vectorWeight2[vecW2] = nonLinSum(self.layers[layerLevel][neuron].vectorWeight2[vecW2], error, currT)
+                        # if (self.layers[layerLevel][neuron].vectorWeight2[vecW2] > 16.0):
+                        #     self.layers[layerLevel][neuron].vectorWeight2[vecW2] = 16.0 #hault float overflow
 
                     for sclW in range(len(self.layers[layerLevel][neuron].bias)):
                         matrix = self.run(trainInput)[0]
                         error = nOutput - matrix[0]
-                        currT = getTruth(matrix)
+                        currT = getConfidince(matrix)
                         #print("Actual Output: ",nOutput,"\nAlgorithm guess: ",matrix[0],"\nConfidince: ",currT,"\nTest: ",tester)
                         if (error < 0.01 and error > 0.01 and currT > 0.95):
                             pass
-                        self.layers[layerLevel][neuron].bias[sclW] += error / currT
+                        if (currT != 0.0):
+                            self.layers[layerLevel][neuron].bias[sclW] = nonLinSum(self.layers[layerLevel][neuron].bias[sclW], error, currT)
+                        # if (self.layers[layerLevel][neuron].bias[sclW] > 16.0):
+                        #     self.layers[layerLevel][neuron].bias[sclW] = 16.0 #hault float overflow
 
 
-        print(getTruth(self.run(trainInput)[0]))
-        #print(nOutput)
+        print(getConfidince(self.run(trainInput)[0]))
         pass
 
     def run(self, runInput):
@@ -109,32 +95,35 @@ class NueralNetwork(object):
             layerInput = np.array(layerOutput)
         return(layerInput)
 
+def nonLinSum(weight, err, currT):
+    return weight + nonlin(err/currT) - 0.5
+
 def nonlin(x, deriv=False):
     # print(x)
     if (deriv==True):
         return x*(1-x)
     return 1.0/(1.0+np.exp(-x.astype(np.float64)))
 
-def getTruth(matrix):
+def getConfidince(matrix):
     nl = nonlin(matrix[0])
     if (nl == 0.0):
         return 0.5
     return nl
+
+def getGuess(matrix):
+    return matrix[0]
 
 np.random.seed(21)
 nn = NueralNetwork(1, 16)
 nn.addLayer(2)
 nn.addLayer(2)
 nn.addLayer(1)
-# add_np = np.random.rand(16*16).astype(np.float32)
-# mArr = np.array([add_np])
-# nn.train2(mArr, 1.0, 1)
 add_np = np.random.rand(16*16).astype(np.float32)
 mArr = np.array([add_np])
 
+test22 = None
 num_lines = sum(1 for line in open('datafile.txt'))
-for p in range (3):
-    # print("test")
+for p in range (1):
     f = open("dataFile.txt", 'r')
     for i in range (num_lines - 1):
         matrix = np.zeros((16*16)).astype(np.float32)
@@ -143,11 +132,21 @@ for p in range (3):
                 if (f.read(1) is "1"):
                     matrix[j*p] = np.float32(1.0)
         f.read(1)
-        if (i > 18):
-            nn.train2(np.array([matrix]), 1, 1, i)
-        # elif i> 16:
-        #     nn.train2(np.array([matrix]), 1, 1, i)
-        print("Next testcase: ")
+        print(i)
+        print (matrix)
+        if (i > 20 and i < 23):
+            nn.train(np.array([matrix]), 1, 1, i)
+            if (i == 22):
+                test22 = np.array([matrix])
+        # elif (i > 12 and i < 16):
+        #      nn.train(np.array([matrix]), 0, 1, i)
 
+print(mArr)
+print(test22)
+print("test random:")
+testOut = nn.run(mArr)[0]
+print("Confidince: ", getConfidince(testOut), "of Guess: ", getGuess(testOut))
 
-print(getTruth(nn.run(mArr)[0]))
+print("test22:")
+testOut = nn.run(test22)[0]
+print("Confidince: ", getConfidince(testOut), "of Guess: ", getGuess(testOut))
