@@ -2,9 +2,9 @@
 
 Goal is to build a Neural Network Framework in Python using OpenCL acceleration.
 
-Warning: this project is a work in progress.
+### Warning: this project is a work in progress.
 
-ToDos:
+### ToDos:
 Make improvements and optimizations to training model and run function:
  * Cython implementation
  * Reduction of redundant operations
