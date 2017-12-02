@@ -43,6 +43,11 @@ def buildNeuron(context):
       int y = grid % vecSize;
       matrix[grid] = aVec[x]*bVec[y];
     }
+    __kernel void nonLinNorm(__global const float *matrix, __global float *mOut)
+    {
+      int grid = get_global_id(0);
+      mOut[grid] = 1.0/(1.0 + exp(-matrix[grid]));
+    }
     """).build()
     return program
 
@@ -78,27 +83,33 @@ class Neuron(object):
             program.dotPrime(queue, (self.mSize,), None, np.int32(self.vectorSize), vecW_g, matrix_g, aVec_g)
             program.dotSecondary(queue, (self.mSize,), None, np.int32(self.vectorSize), vecW2_g, matrix_g, bVec_g)
             program.fullMultiply(queue, (self.mSize,), None, np.int32(self.vectorSize), aVec_g, bVec_g, matrix_g)
-            weightAve += np.float32(self.bias[i])
             if (i == 0):
                 mOut_g = matrix_g
             else:
                 program.sumMatrix(queue, (self.mSize,), None, mOut_g, matrix_g, mOut_g)
 
-        weightAve = weightAve/np.float32(inputs)
-        program.scalarWeight(queue, (self.mSize,), None, np.float32(1.0/(inputs*weightAve*self.vectorSize+0.0000001)), mOut_g, mOut_g)
+        program.nonLinNorm(queue, (self.mSize,), None, mOut_g, mOut_g)
         mOut_np = np.empty_like(matrixArr[0])
         cl.enqueue_copy(queue, mOut_np, mOut_g)
         return mOut_np
 
-# np.random.seed(41)
-# add_np = np.random.rand(16*16).astype(np.float32)
+#np.random.seed(41)
+#add_np = np.random.rand(16*16).astype(np.float32)
 # bdd_np = np.random.rand(16*16).astype(np.float32)
 # mtrxArr = np.array([add_np, bdd_np])
-# ctx = cl.create_some_context()
-# queue = cl.CommandQueue(ctx)
+#ctx = cl.create_some_context()
+#queue = cl.CommandQueue(ctx)
 #
 # nrn = Neuron(2, 16)
-# prg = nrn.buildNeuron(ctx)
+#prg = buildNeuron(ctx)
 #
 # matrixOut = nrn.runNeuron(queue, prg, mtrxArr)
-# print(matrixOut)
+#mf = cl.mem_flags
+#matrix_g = cl.Buffer(ctx, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=add_np)
+#prg.nonLinNorm(queue, (16*16,), None, matrix_g, matrix_g)
+#mOut_np = np.empty_like(add_np)
+#cl.enqueue_copy(queue, mOut_np, matrix_g)
+
+
+#print(add_np)
+#print(mOut_np)
